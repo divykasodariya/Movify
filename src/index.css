@@ -1,0 +1,61 @@
+/* Reset default styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background-color: #121212;
+  color: #e0e0e0;
+}
+
+/* Base container styles */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Button base styles */
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  background-color: #2d2d2d;
+  color: #e0e0e0;
+}
+
+button:hover {
+  background-color: #3d3d3d;
+}
+
+/* Link base styles */
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Form element base styles */
+input {
+  border: 1px solid #404040;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 14px;
+  background-color: #1e1e1e;
+  color: #e0e0e0;
+}
+
+input:focus {
+  outline: none;
+  border-color: #525252;
+  box-shadow: 0 0 0 2px rgba(82, 82, 82, 0.25);
+}
+
+input::placeholder {
+  color: #808080;
+}
