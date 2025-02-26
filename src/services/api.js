@@ -9,7 +9,7 @@ export const getPopularMovies = async (page = 1) => {
     "trakt-api-key": api_key,
     "trakt-api-version": "2",
   };
-  const res = await fetch(`${base_url}/movies/popular?page=${page}&limit=20`, { headers });
+  const res = await fetch(`${base_url}/movies/popular?page=${page}&limit=12`, { headers });
   if (!res.ok) throw new Error("Failed to fetch popular movies");
   const data = await res.json();
   return data;
