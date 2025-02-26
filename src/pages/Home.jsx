@@ -1,78 +1,104 @@
 import Moviecard from "../components/Moviecard";
-import { useState, useEffect} from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   SearchMovies,
   getPopularMovies,
   getAdditionalInfo,
 } from "../services/api";
-
 import { useMovies } from './MoviesContext.jsx';
 import { useFavmovies } from "./FavMoviesContext.jsx";
+
 function Home() {
   const [searchQuerry, setsearchQuerry] = useState("");
-  // const [movies, setmovies] = useState([]);
-  const [loading, setloading] = useState(true);
+  const [loading, setloading] = useState(false);
   const [error, seterror] = useState(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true); // Track if more movies are available
   const { movies, setmovies } = useMovies();
-   const {favMovies, setfavMovies} = useFavmovies();
+  const { favMovies, setfavMovies } = useFavmovies();
+  const loaderRef = useRef(null);
+
   async function onFav(id) {
-    const newfav = await movies.find((movie) => movie.ids.imdb == id);
-    console.log("new fav", newfav);
-    setfavMovies([...favMovies, newfav]);
-    console.log(favMovies,"fav movies");
+    const newfav = movies.find((movie) => movie.ids.imdb === id);
+    if (newfav && !favMovies.some((fav) => fav.ids.imdb === id)) {
+      setfavMovies([...favMovies, newfav]);
+    }
   }
+
   async function enhancemovies(movielist) {
     const updatedMovies = await Promise.all(
-      movielist.map((movie) => {
-        const getAdditional = async () => {
+      movielist.map(async (movie) => {
+        try {
           const additional = await getAdditionalInfo(movie.ids.imdb);
           return { ...movie, ...additional };
-        };
-
-        return getAdditional();
+        } catch (err) {
+          console.error(`Failed to enhance movie ${movie.title}:`, err);
+          return movie;
+        }
       })
     );
-
     return updatedMovies;
+  }
+
+  async function fetchMovies(isSearch = false) {
+    if (!hasMore || loading) return; // Prevent fetching if no more data or already loading
+    try {
+      setloading(true);
+      seterror(null); // Clear previous errors
+      let movieData;
+      if (isSearch && searchQuerry) {
+        const searchresult = await SearchMovies(searchQuerry, page);
+        console.log("Search result:", searchresult); // Debug raw API response
+        movieData = searchresult.map((result) => result.movie);
+      } else {
+        movieData = await getPopularMovies(page);
+        console.log("Popular movies:", movieData); // Debug raw API response
+      }
+      const updtdmovieData = await enhancemovies(movieData);
+      console.log("Enhanced movies:", updtdmovieData); // Debug enhanced data
+      setmovies((prevMovies) => [...prevMovies, ...updtdmovieData]);
+      // Check if fewer movies than limit (20) were returned, indicating no more data
+      if (movieData.length < 20) setHasMore(false);
+    } catch (err) {
+      seterror(err.message);
+      console.error("Fetch error:", err);
+    } finally {
+      setloading(false);
+    }
   }
 
   function handlesubmit(e) {
     e.preventDefault();
-    const loadsmovie = async () => {
-      try {
-        console.log("loading for searched movies");
-        const searchresult = await SearchMovies(searchQuerry);
-
-        const movieData = searchresult.map((result) => result.movie);
-        const updtdmovieData = await enhancemovies(movieData);
-        setmovies(updtdmovieData);
-        setsearchQuerry("");
-      } catch (err) {
-        seterror(err);
-        console.log("failed to search for movies");
-      } finally {
-        setloading(false);
-      }
-    };
-    loadsmovie();
+    if (!searchQuerry) return;
+    setmovies([]);
+    setPage(1);
+    setHasMore(true); // Reset for new search
+    fetchMovies(true);
+    setsearchQuerry("");
   }
 
   useEffect(() => {
-    const fetchMovies = async () => {
-      try {
-        console.log("Fetching popular movies...");
-        const popularmovies = await getPopularMovies();
-        const updtedpopularmovies = await enhancemovies(popularmovies);
-        setmovies(updtedpopularmovies);
-      } catch (err) {
-        console.log(err);
-        seterror("Failed to fetch movies");
-      } finally {
-        setloading(false);
-      }
-    };
-    fetchMovies();
+    fetchMovies(); // Initial load
   }, []);
+
+  useEffect(() => {
+    if (page > 1) fetchMovies(searchQuerry !== "");
+  }, [page]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loading && hasMore && movies.length > 0) {
+          setPage((prevPage) => prevPage + 1);
+        }
+      },
+      { threshold: 0.1, rootMargin: "100px" } // Trigger 100px before bottom
+    );
+    if (loaderRef.current) observer.observe(loaderRef.current);
+    return () => {
+      if (loaderRef.current) observer.unobserve(loaderRef.current);
+    };
+  }, [loading, hasMore]);
 
   return (
     <>
@@ -91,25 +117,23 @@ function Home() {
         </form>
       </div>
       <div className="movie-box">
+        {error && <p style={{ color: "red" }}>Error: {error}</p>}
         {Array.isArray(movies) && movies.length > 0 ? (
-          movies.map(
-            (movie) =>
-              movie &&
-              movie.title
-                .toLowerCase()
-                .startsWith(searchQuerry.toLowerCase()) && (
-                <Moviecard
-                  movie={movie}
-                  onFav={onFav}
-                  key={movie.id || movie.ids?.trakt || Math.random()}
-                 
-                />
-              )
+          movies.map((movie) =>
+            movie && movie.title ? (
+              <Moviecard
+                movie={movie}
+                onFav={onFav}
+                key={movie.ids?.imdb || movie.id || Math.random()}
+              />
+            ) : null
           )
         ) : (
-          <p>No movies to display</p>
+          !loading && <p>No movies to display</p>
         )}
+        <div ref={loaderRef} style={{ height: "50px" }} />
       </div>
+      {loading && <p>Loading {movies.length > 0 ? "more" : ""} movies...</p>}
     </>
   );
 }

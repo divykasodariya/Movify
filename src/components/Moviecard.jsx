@@ -1,8 +1,11 @@
 function Moviecard({ movie ,onFav}) {
+function OpenImdb(){
+  open(`https://www.imdb.com/title/${movie.ids.imdb}/`)
+}
   return (
     <>
-      <div className="movie-card">
-        <div className="image">
+      <div className="movie-card" >
+        <div className="image" onClick={OpenImdb}>
           <img
             src={movie.poster}
             alt={`${movie.title} poster`}
