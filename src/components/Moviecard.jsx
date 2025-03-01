@@ -1,7 +1,9 @@
-function Moviecard({ movie ,onFav}) {
+function Moviecard({ movie ,onFav , isFav}) {
 function OpenImdb(){
-  open(`https://www.imdb.com/title/${movie.ids.imdb}/`)
+  window.open(`https://www.imdb.com/title/${movie.ids.imdb}/`)
 }
+
+console.log(`Movie ${movie.title} isFav:`, isFav);
   return (
     <>
       <div className="movie-card" >
@@ -15,7 +17,8 @@ function OpenImdb(){
         <p className="movie-name">{movie.title}</p>
 
         <div className="movie-overlay">
-          <button className="like-button" onClick={() => onFav(movie.ids.imdb)}>
+          <button className="like-button" onClick={() => onFav(movie.ids.imdb)} 
+          style={isFav ? {background : "#ff4d4d" ,color : "#1e1e1e"} : {}}>
             &#x2764;
           </button>
         </div>

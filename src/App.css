@@ -128,7 +128,11 @@
   background: #ff4d4d;
   color: #1e1e1e;
 }
+/* .like-button:active{
+  background: #ff4d4d;
+  color: #1e1e1e;
 
+} */
 .movie-description {
   padding: 1rem;
   background: #2d2d2d;

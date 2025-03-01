@@ -18,12 +18,23 @@ function Home() {
   const { favMovies, setfavMovies } = useFavmovies();
   const loaderRef = useRef(null);
 
-  async function onFav(id) {
-    const newfav = movies.find((movie) => movie.ids.imdb === id);
-    if (newfav && !favMovies.some((fav) => fav.ids.imdb === id)) {
-      setfavMovies([...favMovies, newfav]);
+  function onFav(id) {
+    const isFavorite = favMovies.some(movie => movie.ids.imdb === id);
+  
+    if (isFavorite) {
+      // Remove movie from favorites
+      setfavMovies(prev => prev.filter(movie => movie.ids.imdb !== id));
+    } else {
+      // Add movie to favorites
+      const newFav = movies.find(movie => movie.ids.imdb === id);
+      if (newFav) {
+        setfavMovies(prev => [...prev, newFav]);
+        console.log("Added new fav:", newFav);
+      } else {
+        console.log("Movie not found for id:", id);
+      }
     }
-  }
+  } 
 
   async function enhancemovies(movielist) {
     const updatedMovies = await Promise.all(
@@ -124,7 +135,9 @@ function Home() {
               <Moviecard
                 movie={movie}
                 onFav={onFav}
-                key={movie.ids?.imdb || movie.id || Math.random()}
+                isFav={favMovies.some(favMovie => favMovie.ids.imdb === movie.ids.imdb)}
+
+                key={movie.id || Math.random()}
               />
             ) : null
           )
